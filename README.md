@@ -23,7 +23,7 @@ You type a topic. The agent does everything else:
 
 ## Demo
 
-![Agent Demo](https://github.com/onkar-01/content-creation-agent)
+![Agent Demo](https://github.com/onkar-01/content-creation-agent/src/assets/agent-demo.png)
 
 ---
 
