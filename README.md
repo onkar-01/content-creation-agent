@@ -23,7 +23,7 @@ You type a topic. The agent does everything else:
 
 ## Demo
 
-![Agent Demo](https://github.com/onkar-01/content-creation-agent/src/assets/agent-demo.png)
+![Agent Demo](src/assets/agent-demo.png)
 
 ---
 
@@ -50,8 +50,8 @@ You type a topic. The agent does everything else:
 
 ```bash
 # Clone the repo
-git clone https://github.com/onkar-01/omvatsa-content-agent.git
-cd omvatsa-content-agent
+git clone https://github.com/onkar-01/content-creation-agent.git
+cd content-creation-agent
 
 # Install dependencies
 npm install
@@ -88,7 +88,7 @@ Auto-retry logic handles 429 rate limit errors with exponential backoff (8s → 
 ## Project Structure
 
 ```
-omvatsa-content-agent/
+content-creation-agent/
 ├── App.jsx          # Main React component — the entire agent
 ├── README.md        # This file
 ├── .env.example     # Environment variable template
