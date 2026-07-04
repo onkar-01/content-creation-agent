@@ -23,7 +23,7 @@ You type a topic. The agent does everything else:
 
 ## Demo
 
-![Agent Demo](https://github.com/onkar-01/omvatsa-content-agent/raw/main/demo.png)
+![Agent Demo](https://github.com/onkar-01/content-creation-agent)
 
 ---
 
@@ -134,11 +134,10 @@ Open an issue first so we can align on the approach.
 
 ## About
 
-I'm **Om Vatsa** — ex-software engineer, now creating business content for ambitious Indian college students and 20-somethings who want to build, not just work.
+I'm **Om Vatsa** — software engineer,  creating something new for ambitious Indian college students and 20-somethings who want to build, not just work.
 
-- 📺 YouTube: [@omvatsa](https://youtube.com/@omvatsa)
-- 💼 LinkedIn: [Om Vatsa](https://linkedin.com/in/omvatsa)
-- 𝕏 Twitter: [@omvatsa](https://twitter.com/omvatsa)
+
+- 💼 LinkedIn: [Om Vatsa](https://linkedin.com/in/onkar-vatsa-2478b5212/)
 
 ---
 
