@@ -23,6 +23,8 @@ You type a topic. The agent does everything else:
 
 ## Demo
 
+<video src="src/assets/agent_demo_video.mov" width="100%" controls></video>
+
 ![Agent Demo](src/assets/agent-demo.png)
 
 ---
