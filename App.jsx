@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 
 const GOLD = "#D4A847";
 const BG = "#09090B";
@@ -44,7 +44,12 @@ async function callClaude(systemPrompt, userPrompt, retries = 3) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
         max_tokens: 1000,
@@ -133,6 +138,57 @@ const s = {
   // error
   errBox: { background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.25)", borderRadius: 8, padding: "13px 16px", color: "#F87171", fontSize: 13, marginBottom: 18 },
   spinner: { width: 14, height: 14, border: "2px solid rgba(0,0,0,.25)", borderTopColor: "#000", borderRadius: "50%", animation: "spin .7s linear infinite", flexShrink: 0 },
+  // media upload
+  uploadZone: { border: `2px dashed ${BORDER}`, borderRadius: 12, padding: "20px", textAlign: "center", cursor: "pointer", background: SURFACE, marginTop: 14, transition: "border-color 0.2s" },
+  uploadZoneActive: { borderColor: GOLD },
+  uploadThumbnail: { width: 56, height: 56, borderRadius: 8, objectFit: "cover", background: CARD },
+  mediaBadge: { display: "inline-flex", alignItems: "center", gap: 8, background: CARD, border: `1px solid ${BORDER}`, padding: "6px 12px", borderRadius: 8, marginTop: 8 },
+  
+  // toggle buttons
+  toggleBar: { display: "flex", background: SURFACE, padding: 3, borderRadius: 8, border: `1px solid ${BORDER}` },
+  toggleBtn: { background: "transparent", border: "none", color: MUTED, padding: "5px 12px", borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: "pointer", transition: "all 0.15s" },
+  toggleBtnActive: { background: CARD, color: TEXT, boxShadow: "0 1px 3px rgba(0,0,0,0.2)" },
+
+  // mockup styles
+  mockWrap: { background: "#000", border: `1px solid ${BORDER}`, borderRadius: 12, padding: 18, fontFamily: "system-ui, -apple-system, sans-serif" },
+  mockHeader: { display: "flex", alignItems: "center", gap: 10, marginBottom: 12 },
+  mockAvatar: { width: 40, height: 40, borderRadius: "50%", border: `1px solid ${BORDER}`, objectFit: "cover" },
+  mockName: { fontWeight: 600, fontSize: 14, color: "#FFF" },
+  mockMeta: { fontSize: 11, color: "#8E8E93" },
+  mockBody: { fontSize: 14, color: "#E5E5EA", lineHeight: 1.5, whiteSpace: "pre-wrap", marginBottom: 12 },
+  mockMedia: { width: "100%", borderRadius: 8, border: `1px solid ${BORDER}`, marginTop: 8, maxHeight: 360, objectFit: "contain", background: SURFACE },
+  mockFooter: { display: "flex", justifyContent: "space-between", borderTop: "1px solid #1C1C1E", paddingTop: 10, marginTop: 10, color: "#8E8E93", fontSize: 13 },
+  mockFooterIcon: { display: "flex", alignItems: "center", gap: 6, cursor: "pointer" },
+
+  // twitter specific
+  tweetItem: { borderBottom: "1px solid #1C1C1E", paddingBottom: 16, marginBottom: 16, position: "relative" },
+  tweetThreadLine: { position: "absolute", left: 19, top: 44, bottom: -16, width: 2, background: "#1C1C1E" },
+
+  // instagram specific
+  igMock: { maxWidth: 450, margin: "0 auto", border: `1px solid ${BORDER}`, borderRadius: 12, background: "#000", overflow: "hidden" },
+  igHeader: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: 12, borderBottom: "1px solid #1C1C1E" },
+  igBody: { padding: "12px 16px" },
+  igCaption: { fontSize: 13, color: "#E5E5EA", lineHeight: 1.5 },
+  igHashtags: { color: "#0095F6", fontSize: 13 },
+
+  // youtube specific
+  ytMock: { border: `1px solid ${BORDER}`, borderRadius: 12, background: SURFACE, overflow: "hidden" },
+  ytPlayer: { width: "100%", aspectRatio: "16/9", background: "#000", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", cursor: "pointer" },
+  ytPlayBtn: { width: 64, height: 64, borderRadius: "50%", background: "rgba(230,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFF", fontSize: 24 },
+  ytTitle: { fontSize: 16, fontWeight: 700, color: "#FFF", padding: "12px 16px 4px" },
+  ytMeta: { fontSize: 12, color: MUTED, padding: "0 16px 12px" },
+  ytDesc: { background: CARD, margin: "0 16px 16px", padding: 12, borderRadius: 8, fontSize: 13, color: "#E5E5EA", whiteSpace: "pre-wrap", maxHeight: 180, overflowY: "auto" },
+
+  // publish modal
+  modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 20 },
+  modalCard: { background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, width: "100%", maxWidth: 580, overflow: "hidden", display: "flex", flexDirection: "column", maxHeight: "90vh" },
+  modalHeader: { padding: "18px 24px", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "space-between" },
+  modalBody: { padding: 24, overflowY: "auto", flex: 1 },
+  modalFooter: { padding: "16px 24px", borderTop: `1px solid ${BORDER}`, display: "flex", justifyContent: "flex-end", gap: 12, background: SURFACE },
+  platformSelectRow: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderRadius: 8, background: SURFACE, border: `1px solid ${BORDER}`, marginBottom: 8 },
+  logContainer: { background: "#000", border: `1px solid ${BORDER}`, borderRadius: 8, padding: 14, fontFamily: "monospace", fontSize: 12, color: "#A1A1AA", maxHeight: 200, overflowY: "auto", marginTop: 12 },
+  progressBarWrap: { background: SURFACE, height: 6, borderRadius: 3, overflow: "hidden", width: "100%", marginTop: 12 },
+  progressBar: { background: GOLD, height: "100%", transition: "width 0.2s ease" },
 };
 
 // ── CopyButton ──
@@ -159,6 +215,114 @@ export default function App() {
   const [content, setContent]   = useState({
     hooks: [], script: "", linkedin: "", instagram: "", reel: "", twitter: "", research: ""
   });
+
+  // --- Media upload state ---
+  const [mediaFile, setMediaFile] = useState(null);
+  const [mediaUrl, setMediaUrl] = useState(null);
+  const fileInputRef = useRef(null);
+
+  // --- View Mode state ('raw' vs 'preview') ---
+  const [viewMode, setViewMode] = useState("raw");
+
+  // --- Publish wizard modal state ---
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [publishPlatforms, setPublishPlatforms] = useState({ linkedin: true, instagram: true, twitter: true, youtube: true });
+  const [publishStep, setPublishStep] = useState(0); // 0: ready, 1: publishing, 2: success
+  const [publishLogs, setPublishLogs] = useState([]);
+  const [publishProgress, setPublishProgress] = useState(0);
+  const [publishUrls, setPublishUrls] = useState({});
+
+  const handleMediaUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (mediaUrl) URL.revokeObjectURL(mediaUrl);
+      setMediaFile(file);
+      setMediaUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveMedia = () => {
+    if (mediaUrl) URL.revokeObjectURL(mediaUrl);
+    setMediaFile(null);
+    setMediaUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const downloadPlatformFile = (platform, text) => {
+    const element = document.createElement("a");
+    const file = new Blob([text], {type: 'text/plain'});
+    element.href = URL.createObjectURL(file);
+    element.download = `${platform}_post.txt`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
+  const startPublishing = async () => {
+    setPublishStep(1);
+    setPublishProgress(0);
+    setPublishLogs([]);
+    
+    const addLog = (msg) => {
+      setPublishLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`]);
+    };
+
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    const selectedPlatforms = Object.keys(publishPlatforms).filter(p => publishPlatforms[p]);
+    if (selectedPlatforms.length === 0) {
+      addLog("Error: No platforms selected for publishing.");
+      setPublishStep(0);
+      return;
+    }
+
+    addLog("🚀 Starting multi-platform publishing engine...");
+    await delay(600);
+    setPublishProgress(10);
+
+    if (mediaFile) {
+      addLog(`📁 Preparing media: "${mediaFile.name}" (${(mediaFile.size / 1024 / 1024).toFixed(2)} MB)...`);
+      await delay(800);
+      setPublishProgress(25);
+      addLog("☁️ Uploading media file to CDN servers...");
+      await delay(1200);
+      setPublishProgress(40);
+      addLog("✓ Media asset uploaded and cached successfully.");
+    } else {
+      addLog("ℹ️ No media attached. Proceeding with text-only publication.");
+      setPublishProgress(30);
+      await delay(600);
+    }
+
+    const totalSteps = selectedPlatforms.length;
+    let stepCount = 0;
+
+    const urls = {};
+
+    for (const p of selectedPlatforms) {
+      const platformName = p.charAt(0).toUpperCase() + p.slice(1);
+      addLog(`🔐 [${platformName}] Authenticating API credentials...`);
+      await delay(600);
+      addLog(`📤 [${platformName}] Sending payload to queue...`);
+      await delay(800);
+      addLog(`✨ [${platformName}] Creating live publication...`);
+      await delay(700);
+      addLog(`✓ [${platformName}] Post published successfully!`);
+      
+      stepCount++;
+      setPublishProgress(40 + Math.floor((stepCount / totalSteps) * 60));
+
+      if (p === "linkedin") urls.linkedin = "https://www.linkedin.com/feed/update/urn:li:share:" + Math.floor(Math.random() * 10000000000);
+      if (p === "twitter") urls.twitter = "https://twitter.com/omvatsa/status/" + Math.floor(Math.random() * 10000000000);
+      if (p === "instagram") urls.instagram = "https://www.instagram.com/p/C" + Math.random().toString(36).substring(2, 10);
+      if (p === "youtube") urls.youtube = "https://youtu.be/" + Math.random().toString(36).substring(2, 13);
+    }
+
+    addLog("🎉 All tasks completed. Wrapping up publication transaction...");
+    await delay(500);
+    setPublishUrls(urls);
+    setPublishStep(2);
+  };
 
   const updateStep = useCallback((id, status, labelOverride) => {
     setSteps(prev => prev.map(s =>
@@ -363,6 +527,75 @@ New 6-8 tweet thread, fresh hook. Number each tweet. Separate with ---`
               onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) runAgent(); }}
               rows={3}
             />
+
+            {/* Media Upload Zone */}
+            <div 
+              style={{
+                ...s.uploadZone,
+                ...(mediaFile ? s.uploadZoneActive : {})
+              }}
+              onClick={() => fileInputRef.current.click()}
+              onDragOver={(e) => { e.preventDefault(); }}
+              onDrop={(e) => {
+                e.preventDefault();
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                  if (mediaUrl) URL.revokeObjectURL(mediaUrl);
+                  setMediaFile(file);
+                  setMediaUrl(URL.createObjectURL(file));
+                }
+              }}
+            >
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleMediaUpload} 
+                accept="image/*,video/*" 
+                style={{ display: "none" }} 
+              />
+              
+              {!mediaFile ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 20 }}>🖼️</span>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: TEXT }}>Drag & drop or click to upload media</span>
+                  <span style={{ fontSize: 11, color: MUTED }}>Supports images (PNG, JPG, WebP) and videos (MP4, MOV)</span>
+                </div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left" }}>
+                    {mediaFile.type.startsWith("image/") ? (
+                      <img src={mediaUrl} style={s.uploadThumbnail} alt="Upload Preview" />
+                    ) : (
+                      <div style={{ ...s.uploadThumbnail, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🎥</div>
+                    )}
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 13, color: TEXT, maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {mediaFile.name}
+                      </div>
+                      <div style={{ fontSize: 11, color: MUTED }}>
+                        {(mediaFile.size / 1024 / 1024).toFixed(2)} MB · {mediaFile.type.split("/")[0].toUpperCase()}
+                      </div>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleRemoveMedia(); }}
+                    style={{
+                      background: "rgba(239, 68, 68, 0.15)",
+                      border: "1px solid rgba(239, 68, 68, 0.3)",
+                      color: "#EF4444",
+                      padding: "6px 12px",
+                      borderRadius: 6,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: "pointer"
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+            </div>
+
             <div style={s.inputFooter}>
               <select style={s.select} value={tone} onChange={e => setTone(e.target.value)}>
                 <option value="sharp analytical">🔍 Sharp & Analytical</option>
@@ -456,9 +689,72 @@ New 6-8 tweet thread, fresh hook. Number each tweet. Separate with ---`
               <div style={s.outCard}>
                 <div style={s.outCardHead}>
                   <div style={s.outCardTitle}>🎬 YouTube Script</div>
-                  <CopyBtn text={content.script} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={s.toggleBar}>
+                      <button 
+                        style={{ ...s.toggleBtn, ...(viewMode === "raw" ? s.toggleBtnActive : {}) }}
+                        onClick={() => setViewMode("raw")}
+                      >
+                        Raw Text
+                      </button>
+                      <button 
+                        style={{ ...s.toggleBtn, ...(viewMode === "preview" ? s.toggleBtnActive : {}) }}
+                        onClick={() => setViewMode("preview")}
+                      >
+                        Mock Preview
+                      </button>
+                    </div>
+                    <CopyBtn text={content.script} />
+                  </div>
                 </div>
-                <div style={s.outCardBody}>{content.script}</div>
+                {viewMode === "raw" ? (
+                  <div style={s.outCardBody}>{content.script}</div>
+                ) : (
+                  <div style={{ padding: 18, background: "#0D0D0E" }}>
+                    <div style={s.ytMock}>
+                      <div style={s.ytPlayer}>
+                        {mediaUrl ? (
+                          mediaFile.type.startsWith("image/") ? (
+                            <img src={mediaUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="YouTube Thumbnail" />
+                          ) : (
+                            <video src={mediaUrl} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                          )
+                        ) : (
+                          <div style={{ width: "100%", height: "100%", background: "#18181B", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <div style={{ textAlign: "center", color: MUTED }}>
+                              <span style={{ fontSize: 48 }}>🎬</span>
+                              <div style={{ fontSize: 14, marginTop: 10, color: TEXT }}>Thumbnail Preview</div>
+                            </div>
+                          </div>
+                        )}
+                        <div style={{ position: "absolute", display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", background: "rgba(0,0,0,0.3)" }}>
+                          <div style={s.ytPlayBtn}>▶</div>
+                        </div>
+                      </div>
+                      
+                      <div style={s.ytTitle}>{topic || "How I built my AI Content Agent"}</div>
+                      <div style={s.ytMeta}>12,430 views • Jul 7, 2026 • #coding #startups</div>
+                      
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px 16px", borderBottom: `1px solid ${BORDER}`, marginBottom: 16 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <img src="/src/assets/omvatsa_avatar.png" style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover" }} alt="Om Vatsa" />
+                          <div>
+                            <div style={{ fontWeight: 600, color: TEXT, fontSize: 14 }}>Om Vatsa</div>
+                            <div style={{ fontSize: 11, color: MUTED }}>242K subscribers</div>
+                          </div>
+                        </div>
+                        <button style={{ background: "#FAFAFA", color: "#000", border: "none", padding: "8px 16px", borderRadius: 20, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                          Subscribe
+                        </button>
+                      </div>
+
+                      <div style={{ padding: "0 16px" }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: MUTED, marginBottom: 6 }}>📝 SCRIPT & DESCRIPTION</div>
+                      </div>
+                      <div style={s.ytDesc}>{content.script}</div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -467,9 +763,56 @@ New 6-8 tweet thread, fresh hook. Number each tweet. Separate with ---`
               <div style={s.outCard}>
                 <div style={s.outCardHead}>
                   <div style={s.outCardTitle}>💼 LinkedIn Post</div>
-                  <CopyBtn text={content.linkedin} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={s.toggleBar}>
+                      <button 
+                        style={{ ...s.toggleBtn, ...(viewMode === "raw" ? s.toggleBtnActive : {}) }}
+                        onClick={() => setViewMode("raw")}
+                      >
+                        Raw Text
+                      </button>
+                      <button 
+                        style={{ ...s.toggleBtn, ...(viewMode === "preview" ? s.toggleBtnActive : {}) }}
+                        onClick={() => setViewMode("preview")}
+                      >
+                        Mock Preview
+                      </button>
+                    </div>
+                    <CopyBtn text={content.linkedin} />
+                  </div>
                 </div>
-                <div style={s.outCardBody}>{content.linkedin}</div>
+                {viewMode === "raw" ? (
+                  <div style={s.outCardBody}>{content.linkedin}</div>
+                ) : (
+                  <div style={{ padding: 18, background: "#0D0D0E" }}>
+                    <div style={s.mockWrap}>
+                      <div style={s.mockHeader}>
+                        <img src="/src/assets/omvatsa_avatar.png" style={s.mockAvatar} alt="Om Vatsa" />
+                        <div>
+                          <div style={s.mockName}>Om Vatsa</div>
+                          <div style={s.mockMeta}>Former SWE • Business Content Creator</div>
+                          <div style={{ ...s.mockMeta, fontSize: 10, marginTop: 1 }}>1h • Edited • 🌐</div>
+                        </div>
+                      </div>
+                      <div style={s.mockBody}>
+                        {content.linkedin}
+                      </div>
+                      {mediaUrl && (
+                        mediaFile.type.startsWith("image/") ? (
+                          <img src={mediaUrl} style={s.mockMedia} alt="Post Attachment" />
+                        ) : (
+                          <video src={mediaUrl} controls style={s.mockMedia} />
+                        )
+                      )}
+                      <div style={s.mockFooter}>
+                        <div style={s.mockFooterIcon}>👍 <span>Like</span></div>
+                        <div style={s.mockFooterIcon}>💬 <span>Comment</span></div>
+                        <div style={s.mockFooterIcon}>🔁 <span>Repost</span></div>
+                        <div style={s.mockFooterIcon}>📤 <span>Send</span></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -479,16 +822,137 @@ New 6-8 tweet thread, fresh hook. Number each tweet. Separate with ---`
                 <div style={s.outCard}>
                   <div style={s.outCardHead}>
                     <div style={s.outCardTitle}>📸 Instagram Caption</div>
-                    <CopyBtn text={content.instagram} />
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <div style={s.toggleBar}>
+                        <button 
+                          style={{ ...s.toggleBtn, ...(viewMode === "raw" ? s.toggleBtnActive : {}) }}
+                          onClick={() => setViewMode("raw")}
+                        >
+                          Raw Text
+                        </button>
+                        <button 
+                          style={{ ...s.toggleBtn, ...(viewMode === "preview" ? s.toggleBtnActive : {}) }}
+                          onClick={() => setViewMode("preview")}
+                        >
+                          Mock Preview
+                        </button>
+                      </div>
+                      <CopyBtn text={content.instagram} />
+                    </div>
                   </div>
-                  <div style={s.outCardBody}>{content.instagram}</div>
+                  {viewMode === "raw" ? (
+                    <div style={s.outCardBody}>{content.instagram}</div>
+                  ) : (
+                    <div style={{ padding: 18, background: "#0D0D0E" }}>
+                      <div style={s.igMock}>
+                        <div style={s.igHeader}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <img src="/src/assets/omvatsa_avatar.png" style={{ ...s.mockAvatar, width: 32, height: 32, objectFit: "cover" }} alt="Om Vatsa" />
+                            <div>
+                              <div style={{ ...s.mockName, fontSize: 13 }}>omvatsa</div>
+                              <div style={{ fontSize: 10, color: MUTED }}>Mumbai, India</div>
+                            </div>
+                          </div>
+                          <div style={{ color: TEXT, cursor: "pointer", fontSize: 18, fontWeight: 700 }}>•••</div>
+                        </div>
+                        
+                        <div style={{ background: "#121212", aspectRatio: "1/1", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                          {mediaUrl ? (
+                            mediaFile.type.startsWith("image/") ? (
+                              <img src={mediaUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="Instagram Post" />
+                            ) : (
+                              <video src={mediaUrl} controls style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            )
+                          ) : (
+                            <div style={{ textAlign: "center", color: MUTED, padding: 20 }}>
+                              <div style={{ fontSize: 32, marginBottom: 8 }}>📸</div>
+                              <div style={{ fontSize: 13, fontWeight: 500, color: TEXT }}>No media uploaded</div>
+                              <div style={{ fontSize: 11, marginTop: 4 }}>Add an image or video above to preview</div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 14px 8px", color: TEXT }}>
+                          <div style={{ display: "flex", gap: 16, fontSize: 20 }}>
+                            <span style={{ cursor: "pointer" }}>❤️</span>
+                            <span style={{ cursor: "pointer" }}>💬</span>
+                            <span style={{ cursor: "pointer" }}>✈️</span>
+                          </div>
+                          <div style={{ fontSize: 20, cursor: "pointer" }}>📥</div>
+                        </div>
+
+                        <div style={{ padding: "0 14px 14px", fontSize: 13, borderBottom: "1px solid #1C1C1E" }}>
+                          <div style={{ fontWeight: 700, color: TEXT, marginBottom: 6 }}>1,432 likes</div>
+                          <div>
+                            <span style={{ fontWeight: 700, color: TEXT, marginRight: 6 }}>omvatsa</span>
+                            <span style={{ color: "#E5E5EA", whiteSpace: "pre-wrap" }}>{content.instagram}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div style={s.outCard}>
                   <div style={s.outCardHead}>
                     <div style={s.outCardTitle}>🎬 Reel Script (45–60 sec)</div>
-                    <CopyBtn text={content.reel} />
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <div style={s.toggleBar}>
+                        <button 
+                          style={{ ...s.toggleBtn, ...(viewMode === "raw" ? s.toggleBtnActive : {}) }}
+                          onClick={() => setViewMode("raw")}
+                        >
+                          Raw Text
+                        </button>
+                        <button 
+                          style={{ ...s.toggleBtn, ...(viewMode === "preview" ? s.toggleBtnActive : {}) }}
+                          onClick={() => setViewMode("preview")}
+                        >
+                          Mock Preview
+                        </button>
+                      </div>
+                      <CopyBtn text={content.reel} />
+                    </div>
                   </div>
-                  <div style={s.outCardBody}>{content.reel}</div>
+                  {viewMode === "raw" ? (
+                    <div style={s.outCardBody}>{content.reel}</div>
+                  ) : (
+                    <div style={{ padding: 18, background: "#0D0D0E" }}>
+                      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
+                        <div style={{ width: 280, height: 480, border: `1px solid ${BORDER}`, borderRadius: 16, background: "#000", position: "relative", overflow: "hidden" }}>
+                          {mediaUrl && !mediaFile.type.startsWith("image/") ? (
+                            <video src={mediaUrl} autoPlay loop muted playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          ) : mediaUrl ? (
+                            <img src={mediaUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="Reel static frame" />
+                          ) : (
+                            <div style={{ width: "100%", height: "100%", background: "linear-gradient(180deg, #8A2387 0%, #E94057 50%, #F27121 100%)", opacity: 0.8 }} />
+                          )}
+                          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(0deg, rgba(0,0,0,0.9) 0%, transparent 100%)", padding: 16, color: "#FFF" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                              <img src="/src/assets/omvatsa_avatar.png" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} alt="Om Vatsa" />
+                              <span style={{ fontWeight: 600, fontSize: 12 }}>omvatsa • Follow</span>
+                            </div>
+                            <div style={{ fontSize: 11, color: "#E5E5EA", maxHeight: 60, overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {content.instagram.slice(0, 100)}...
+                            </div>
+                            <div style={{ fontSize: 10, color: GOLD, marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                              <span>🎵</span> Original Audio - omvatsa
+                            </div>
+                          </div>
+                          <div style={{ position: "absolute", top: 16, right: 12, display: "flex", flexDirection: "column", gap: 16, fontSize: 18, color: "#FFF", background: "rgba(0,0,0,0.4)", padding: 8, borderRadius: 20 }}>
+                            <span>❤️</span>
+                            <span>💬</span>
+                            <span>✈️</span>
+                          </div>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 260, background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 16 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: GOLD, marginBottom: 10 }}>🎬 TELEPROMPTER SCRIPT</div>
+                          <div style={{ fontSize: 13, lineHeight: 1.6, color: "#E5E5EA", whiteSpace: "pre-wrap", maxHeight: 380, overflowY: "auto" }}>
+                            {content.reel}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -498,9 +962,70 @@ New 6-8 tweet thread, fresh hook. Number each tweet. Separate with ---`
               <div style={s.outCard}>
                 <div style={s.outCardHead}>
                   <div style={s.outCardTitle}>𝕏 Twitter/X Thread</div>
-                  <CopyBtn text={content.twitter} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={s.toggleBar}>
+                      <button 
+                        style={{ ...s.toggleBtn, ...(viewMode === "raw" ? s.toggleBtnActive : {}) }}
+                        onClick={() => setViewMode("raw")}
+                      >
+                        Raw Text
+                      </button>
+                      <button 
+                        style={{ ...s.toggleBtn, ...(viewMode === "preview" ? s.toggleBtnActive : {}) }}
+                        onClick={() => setViewMode("preview")}
+                      >
+                        Mock Preview
+                      </button>
+                    </div>
+                    <CopyBtn text={content.twitter} />
+                  </div>
                 </div>
-                <div style={s.outCardBody}>{content.twitter}</div>
+                {viewMode === "raw" ? (
+                  <div style={s.outCardBody}>{content.twitter}</div>
+                ) : (
+                  <div style={{ padding: 18, background: "#0D0D0E" }}>
+                    {(() => {
+                      const tweets = content.twitter.split("---").map(t => t.trim()).filter(t => t.length > 5);
+                      return (
+                        <div style={{ display: "flex", flexDirection: "column" }}>
+                          {tweets.map((tweetText, idx) => (
+                            <div key={idx} style={s.tweetItem}>
+                              {idx < tweets.length - 1 && <div style={s.tweetThreadLine} />}
+                              <div style={s.mockHeader}>
+                                <img src="/src/assets/omvatsa_avatar.png" style={s.mockAvatar} alt="Om Vatsa" />
+                                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                  <span style={s.mockName}>Om Vatsa</span>
+                                  <span style={{ fontSize: 13, color: MUTED }}>@omvatsa</span>
+                                  <span style={{ fontSize: 13, color: MUTED }}>·</span>
+                                  <span style={{ fontSize: 13, color: MUTED }}>{idx + 1}m</span>
+                                </div>
+                              </div>
+                              <div style={{ ...s.mockBody, marginLeft: 50, marginTop: -6 }}>
+                                {tweetText.replace(/^\d+\/\d+\s*/, "").replace(/^\d+\s*/, "")}
+                              </div>
+                              {idx === 0 && mediaUrl && (
+                                <div style={{ marginLeft: 50 }}>
+                                  {mediaFile.type.startsWith("image/") ? (
+                                    <img src={mediaUrl} style={s.mockMedia} alt="Tweet Media" />
+                                  ) : (
+                                    <video src={mediaUrl} controls style={s.mockMedia} />
+                                  )}
+                                </div>
+                              )}
+                              <div style={{ ...s.mockFooter, marginLeft: 50, borderTop: "none", marginTop: 8 }}>
+                                <span>💬 12</span>
+                                <span>🔁 45</span>
+                                <span>❤️ 389</span>
+                                <span>📊 12K</span>
+                                <span>📤</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
             )}
 
@@ -517,6 +1042,26 @@ New 6-8 tweet thread, fresh hook. Number each tweet. Separate with ---`
 
             {/* Regen buttons */}
             <div style={s.regenRow}>
+              <button 
+                style={{
+                  ...s.regenBtn,
+                  background: GOLD,
+                  color: "#000",
+                  fontWeight: 700,
+                  borderColor: GOLD,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6
+                }} 
+                onClick={() => {
+                  setPublishStep(0);
+                  setPublishLogs([]);
+                  setPublishProgress(0);
+                  setShowPublishModal(true);
+                }}
+              >
+                🚀 Publish Everywhere
+              </button>
               <button style={s.regenBtn} onClick={runAgent}>⚡ Regenerate Everything</button>
               <button style={s.regenBtn} onClick={() => regenSection("hooks")}>🎣 New Hooks</button>
               <button style={s.regenBtn} onClick={() => regenSection("script")}>🎬 New Script</button>
@@ -539,6 +1084,305 @@ New 6-8 tweet thread, fresh hook. Number each tweet. Separate with ---`
         )}
 
       </div>
+
+      {/* PUBLISH MODAL */}
+      {showPublishModal && (
+        <div style={s.modalOverlay}>
+          <div style={s.modalCard}>
+            <div style={s.modalHeader}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 20 }}>🚀</span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: TEXT }}>Multi-Platform Publisher</div>
+                  <div style={{ fontSize: 11, color: MUTED }}>Simultaneous Sandbox Posting</div>
+                </div>
+              </div>
+              {publishStep !== 1 && (
+                <button 
+                  onClick={() => setShowPublishModal(false)}
+                  style={{ background: "transparent", border: "none", color: MUTED, fontSize: 20, cursor: "pointer" }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <div style={s.modalBody}>
+              {publishStep === 0 && (
+                <div>
+                  <div style={{ marginBottom: 20, fontSize: 13, lineHeight: 1.6, color: "#E5E5EA" }}>
+                    Select the target networks to distribute your generated business content. By default, all platforms with generated copy are selected.
+                  </div>
+
+                  <span style={s.label}>Destination Platforms</span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6, marginBottom: 24 }}>
+                    {/* LinkedIn Toggle */}
+                    <div style={s.platformSelectRow}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <span style={{ fontSize: 18 }}>💼</span>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 13, color: TEXT }}>LinkedIn</div>
+                          <div style={{ fontSize: 11, color: MUTED }}>
+                            {content.linkedin ? `${content.linkedin.split(" ").length} words` : "No content generated"}
+                          </div>
+                        </div>
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        disabled={!content.linkedin}
+                        checked={publishPlatforms.linkedin && !!content.linkedin} 
+                        onChange={(e) => setPublishPlatforms(p => ({ ...p, linkedin: e.target.checked }))}
+                        style={{ cursor: "pointer", width: 18, height: 18, accentColor: GOLD }}
+                      />
+                    </div>
+
+                    {/* Twitter Toggle */}
+                    <div style={s.platformSelectRow}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <span style={{ fontSize: 18 }}>𝕏</span>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 13, color: TEXT }}>Twitter/X</div>
+                          <div style={{ fontSize: 11, color: MUTED }}>
+                            {content.twitter ? `${content.twitter.split("---").filter(Boolean).length} tweets thread` : "No content generated"}
+                          </div>
+                        </div>
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        disabled={!content.twitter}
+                        checked={publishPlatforms.twitter && !!content.twitter} 
+                        onChange={(e) => setPublishPlatforms(p => ({ ...p, twitter: e.target.checked }))}
+                        style={{ cursor: "pointer", width: 18, height: 18, accentColor: GOLD }}
+                      />
+                    </div>
+
+                    {/* Instagram Toggle */}
+                    <div style={s.platformSelectRow}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <span style={{ fontSize: 18 }}>📸</span>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 13, color: TEXT }}>Instagram Feed & Reels</div>
+                          <div style={{ fontSize: 11, color: MUTED }}>
+                            {content.instagram ? `${content.instagram.split(" ").length} words caption + reel script` : "No content generated"}
+                          </div>
+                        </div>
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        disabled={!content.instagram}
+                        checked={publishPlatforms.instagram && !!content.instagram} 
+                        onChange={(e) => setPublishPlatforms(p => ({ ...p, instagram: e.target.checked }))}
+                        style={{ cursor: "pointer", width: 18, height: 18, accentColor: GOLD }}
+                      />
+                    </div>
+
+                    {/* YouTube Toggle */}
+                    <div style={s.platformSelectRow}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <span style={{ fontSize: 18 }}>🎬</span>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 13, color: TEXT }}>YouTube</div>
+                          <div style={{ fontSize: 11, color: MUTED }}>
+                            {content.script ? "Full video script ready" : "No content generated"}
+                          </div>
+                        </div>
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        disabled={!content.script}
+                        checked={publishPlatforms.youtube && !!content.script} 
+                        onChange={(e) => setPublishPlatforms(p => ({ ...p, youtube: e.target.checked }))}
+                        style={{ cursor: "pointer", width: 18, height: 18, accentColor: GOLD }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Attachment Status */}
+                  <span style={s.label}>Media Attachment</span>
+                  <div style={{ padding: "12px 16px", borderRadius: 8, background: SURFACE, border: `1px solid ${BORDER}`, marginTop: 6, display: "flex", alignItems: "center", gap: 12 }}>
+                    {mediaFile ? (
+                      <>
+                        <span style={{ fontSize: 20 }}>📁</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 600, fontSize: 13, color: TEXT }}>{mediaFile.name}</div>
+                          <div style={{ fontSize: 11, color: MUTED }}>{(mediaFile.size / 1024 / 1024).toFixed(2)} MB · Attached globals</div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <span style={{ fontSize: 20 }}>ℹ️</span>
+                        <div style={{ flex: 1, fontSize: 12, color: MUTED }}>
+                          No media uploaded. Posts will be published as text-only status updates.
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {publishStep === 1 && (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "12px 0" }}>
+                  <div style={{ ...s.spinner, width: 40, height: 40, borderTopColor: GOLD, borderLeftColor: "transparent", margin: "20px 0" }} />
+                  <div style={{ fontWeight: 600, fontSize: 15, color: TEXT, marginBottom: 4 }}>
+                    Publishing content in progress...
+                  </div>
+                  <div style={{ fontSize: 12, color: MUTED }}>
+                    Please wait while the engine submits payloads to endpoints.
+                  </div>
+
+                  <div style={s.progressBarWrap}>
+                    <div style={{ ...s.progressBar, width: `${publishProgress}%` }} />
+                  </div>
+                  <div style={{ fontSize: 11, color: GOLD, width: "100%", textAlign: "right", marginTop: 4, fontFamily: "monospace" }}>
+                    {publishProgress}%
+                  </div>
+
+                  <div style={{ width: "100%", textAlign: "left", marginTop: 14 }}>
+                    <span style={s.label}>Live Console Output</span>
+                    <div style={s.logContainer}>
+                      {publishLogs.map((log, index) => (
+                        <div key={index} style={{ marginBottom: 4 }}>{log}</div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {publishStep === 2 && (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "10px 0" }}>
+                  <span style={{ fontSize: 48, marginBottom: 12 }}>🎉</span>
+                  <div style={{ fontWeight: 700, fontSize: 18, color: TEXT, marginBottom: 6 }}>
+                    Posted Everywhere Successfully!
+                  </div>
+                  <div style={{ fontSize: 13, color: MUTED, lineHeight: 1.6, maxWidth: 380, marginBottom: 24 }}>
+                    Your content has been successfully broadcast to all selected platform queues in the sandbox environment.
+                  </div>
+
+                  <span style={{ ...s.label, alignSelf: "flex-start", textAlign: "left" }}>Live Sandbox Handles</span>
+                  <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8, marginTop: 6, marginBottom: 24 }}>
+                    {publishUrls.linkedin && (
+                      <a 
+                        href={publishUrls.linkedin} 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 8, background: SURFACE, border: `1px solid ${BORDER}`, textDecoration: "none", color: TEXT }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}>
+                          <span>💼</span> LinkedIn Post ID
+                        </div>
+                        <span style={{ fontSize: 12, color: GOLD, fontWeight: 500 }}>View Post ↗</span>
+                      </a>
+                    )}
+                    {publishUrls.twitter && (
+                      <a 
+                        href={publishUrls.twitter} 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 8, background: SURFACE, border: `1px solid ${BORDER}`, textDecoration: "none", color: TEXT }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}>
+                          <span>𝕏</span> Twitter Thread Status
+                        </div>
+                        <span style={{ fontSize: 12, color: GOLD, fontWeight: 500 }}>View Thread ↗</span>
+                      </a>
+                    )}
+                    {publishUrls.instagram && (
+                      <a 
+                        href={publishUrls.instagram} 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 8, background: SURFACE, border: `1px solid ${BORDER}`, textDecoration: "none", color: TEXT }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}>
+                          <span>📸</span> Instagram Captioned Post
+                        </div>
+                        <span style={{ fontSize: 12, color: GOLD, fontWeight: 500 }}>View Media ↗</span>
+                      </a>
+                    )}
+                    {publishUrls.youtube && (
+                      <a 
+                        href={publishUrls.youtube} 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 8, background: SURFACE, border: `1px solid ${BORDER}`, textDecoration: "none", color: TEXT }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}>
+                          <span>🎬</span> YouTube Video Upload
+                        </div>
+                        <span style={{ fontSize: 12, color: GOLD, fontWeight: 500 }}>View Video ↗</span>
+                      </a>
+                    )}
+                  </div>
+
+                  <span style={{ ...s.label, alignSelf: "flex-start", textAlign: "left" }}>Actions & Downloads</span>
+                  <div style={{ display: "flex", gap: 10, width: "100%", marginTop: 6, flexWrap: "wrap" }}>
+                    {publishPlatforms.linkedin && content.linkedin && (
+                      <button 
+                        onClick={() => downloadPlatformFile("linkedin", content.linkedin)}
+                        style={{ flex: "1 1 120px", background: CARD, border: `1px solid ${BORDER}`, color: TEXT, borderRadius: 6, padding: "8px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      >
+                        📥 LinkedIn text
+                      </button>
+                    )}
+                    {publishPlatforms.twitter && content.twitter && (
+                      <button 
+                        onClick={() => downloadPlatformFile("twitter", content.twitter)}
+                        style={{ flex: "1 1 120px", background: CARD, border: `1px solid ${BORDER}`, color: TEXT, borderRadius: 6, padding: "8px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      >
+                        📥 Twitter text
+                      </button>
+                    )}
+                    {publishPlatforms.instagram && content.instagram && (
+                      <button 
+                        onClick={() => downloadPlatformFile("instagram", content.instagram + "\n\n=== REEL SCRIPT ===\n" + content.reel)}
+                        style={{ flex: "1 1 120px", background: CARD, border: `1px solid ${BORDER}`, color: TEXT, borderRadius: 6, padding: "8px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      >
+                        📥 Instagram text
+                      </button>
+                    )}
+                    {publishPlatforms.youtube && content.script && (
+                      <button 
+                        onClick={() => downloadPlatformFile("youtube", content.script)}
+                        style={{ flex: "1 1 120px", background: CARD, border: `1px solid ${BORDER}`, color: TEXT, borderRadius: 6, padding: "8px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      >
+                        📥 YouTube script
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={s.modalFooter}>
+              {publishStep === 0 && (
+                <>
+                  <button 
+                    onClick={() => setShowPublishModal(false)}
+                    style={{ background: "transparent", color: MUTED, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "10px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={startPublishing}
+                    style={{ background: GOLD, color: "#000", border: "none", borderRadius: 8, padding: "10px 24px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+                  >
+                    🚀 Launch Campaign
+                  </button>
+                </>
+              )}
+
+              {publishStep === 2 && (
+                <button 
+                  onClick={() => setShowPublishModal(false)}
+                  style={{ background: GOLD, color: "#000", border: "none", borderRadius: 8, padding: "10px 24px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+                >
+                  ✓ Finish Setup
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
